@@ -1,0 +1,6 @@
+# Pin file for pip install -r. This is NOT a stack executable.
+# Do not pass this file to cost_mgmt_etl.stack / compose / kubectl.
+# python-oracledb driver (import oracledb) in thin mode.
+oracledb==4.0.2
+httpx==0.28.1
+pytest==9.1.1

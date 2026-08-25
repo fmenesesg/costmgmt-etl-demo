@@ -1,0 +1,29 @@
+# python-oracledb driver (import oracledb) for thin-mode MERGE.
+[project]
+name = "cost-mgmt-etl"
+version = "0.1.0"
+description = "Copy Hybrid Cloud Console OpenShift cost reports into a customer Oracle warehouse."
+requires-python = ">=3.12"
+dependencies = [
+    "oracledb",
+    "httpx",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["cost_mgmt_etl*"]
+
+[tool.setuptools.package-data]
+cost_mgmt_etl = ["sql/*.sql"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

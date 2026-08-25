@@ -1,0 +1,39 @@
+# Lab Oracle for the Cost Management historical ETL.
+# Compose engine: podman compose (podman-compose 1.x) — this host has podman, not docker.
+# Image pin: tag 23.26.2-slim (digest pin optional).
+services:
+  oracle:
+    image: docker.io/gvenzl/oracle-free:23.26.2-slim
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:-OracleDemo1}
+      APP_USER: ${APP_USER:-costmgmt}
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD:-OracleDemo1}
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./cost_mgmt_etl/sql:/container-entrypoint-initdb.d:ro,z
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+  etl:
+    image: python:3.12-slim
+    profiles:
+      - etl
+    working_dir: /app
+    volumes:
+      - .:/app:z
+    environment:
+      ORACLE_DSN: oracle:1521/FREEPDB1
+      ORACLE_USER: ${ORACLE_USER:-costmgmt}
+      ORACLE_PASSWORD: ${APP_USER_PASSWORD:-OracleDemo1}
+      COSTMGMT_CLIENT_ID: ${COSTMGMT_CLIENT_ID:-}
+      COSTMGMT_CLIENT_SECRET: ${COSTMGMT_CLIENT_SECRET:-}
+    depends_on:
+      - oracle
+    command: ["python", "-m", "cost_mgmt_etl"]
+volumes:
+  oracle-data: {}

@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cost-mgmt-etl
+spec:
+  schedule: "0 6 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: etl
+              image: cost-mgmt-etl:local
+              command: ["python", "-m", "cost_mgmt_etl"]
+              env:
+                - name: COSTMGMT_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: costmgmt-etl
+                      key: client-id
+                - name: COSTMGMT_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: costmgmt-etl
+                      key: client-secret
+                - name: ORACLE_DSN
+                  value: oracle:1521/FREEPDB1
+                - name: ORACLE_USER
+                  value: costmgmt
+                - name: ORACLE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: costmgmt-etl
+                      key: oracle-password
