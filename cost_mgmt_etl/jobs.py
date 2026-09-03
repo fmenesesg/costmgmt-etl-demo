@@ -28,6 +28,21 @@ def extract_windows(run_on: date) -> list[tuple[date, date]]:
     return windows
 
 
+def backfill_run_dates(today: date, months: int = 4) -> list[date]:
+    """Last day of each of the last `months` calendar months, capped at today."""
+    dates: list[date] = []
+    year, month = today.year, today.month
+    for _ in range(months):
+        start, end = month_bounds(year, month, today=today)
+        dates.append(end)
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+    dates.reverse()
+    return dates
+
+
 def run_daily_job(
     connection,
     *,

@@ -1,0 +1,10 @@
+# Class A watermark freshness. Empty result means absent; do not invent totals.
+name: etl_watermark_ocp_cost_by_project
+sql: |
+  SELECT
+      job_name,
+      last_success_end,
+      last_success_run_id,
+      updated_at
+  FROM costmgmt.etl_watermark
+  WHERE job_name = 'ocp_cost_by_project'

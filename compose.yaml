@@ -4,6 +4,7 @@
 services:
   oracle:
     image: docker.io/gvenzl/oracle-free:23.26.2-slim
+    shm_size: "1gb"
     ports:
       - "1521:1521"
     environment:
@@ -34,6 +35,39 @@ services:
       COSTMGMT_CLIENT_SECRET: ${COSTMGMT_CLIENT_SECRET:-}
     depends_on:
       - oracle
-    command: ["python", "-m", "cost_mgmt_etl"]
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        pip install -r requirements.txt
+        python -m cost_mgmt_etl backfill
+  superset:
+    image: docker.io/apache/superset:6.1.0
+    profiles:
+      - bi
+    ports:
+      - "127.0.0.1:8088:8088"
+    environment:
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD:-OracleDemo1}
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-lab-only-not-for-production-change-this-placeholder}
+    volumes:
+      - superset-home:/app/superset_home
+      - ./superset:/app/pythonpath:z
+    depends_on:
+      - oracle
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        pip install oracledb
+        export PYTHONPATH="/app/superset_home/.local/lib/python3.10/site-packages:${PYTHONPATH:-/app/pythonpath}"
+        superset db upgrade
+        superset fab create-admin --username admin --firstname Admin --lastname User --email admin@lab.local --password admin || true
+        superset init
+        python /app/pythonpath/bootstrap_dashboards.py
+        /usr/bin/run-server.sh
 volumes:
   oracle-data: {}
+  superset-home: {}

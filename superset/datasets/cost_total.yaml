@@ -1,0 +1,13 @@
+# Class A warehouse SQL: cost_total is a separate series, not added to layers.
+name: cost_total_by_project
+sql: |
+  SELECT
+      usage_date,
+      source_type,
+      cluster_id,
+      project,
+      currency,
+      SUM(cost_total) AS cost_total
+  FROM costmgmt.fact_ocp_cost_by_project
+  WHERE currency = 'BRL'
+  GROUP BY usage_date, source_type, cluster_id, project, currency

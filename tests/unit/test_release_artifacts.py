@@ -40,3 +40,26 @@ def test_readme_documents_lab_rollback_and_compose_engine() -> None:
     assert "SaaS" in text and "unchanged" in text.lower()
     assert "podman" in text.lower()
     assert "down" in text.lower() or "stop" in text.lower()
+
+
+def test_architecture_doc_has_incremental_ingestion_anchor() -> None:
+    text = (REPO_ROOT / "docs" / "architecture.md").read_text(encoding="utf-8")
+    assert 'id="incremental-ingestion"' in text
+    assert "[Incremental ingestion](#incremental-ingestion)" in text
+
+
+def test_readme_links_to_architecture_incremental_ingestion() -> None:
+    text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "docs/architecture.md#incremental-ingestion" in text
+
+
+def test_readme_documents_bi_profile_uri_brl_and_rollback_without_oracle_volume() -> None:
+    text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "--profile bi" in text
+    assert "oracle+oracledb://costmgmt:${APP_USER_PASSWORD}@oracle:1521/?service_name=FREEPDB1" in text
+    assert "BRL" in text
+    assert "Infinity" in text
+    assert "podman-compose --profile bi down" in text
+    assert "down -v" in text
+    assert "superset-home" in text
+

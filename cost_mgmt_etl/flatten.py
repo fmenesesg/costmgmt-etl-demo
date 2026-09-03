@@ -65,20 +65,37 @@ def _flatten_page(page: Mapping[str, Any], *, cluster_id_fallback: str) -> list[
             project_name = _project_name(project_entry)
             if not project_name:
                 continue
-            values = project_entry.get("values") or []
-            if not values:
-                continue
-            for leaf in values:
+            for leaf, cluster_name in _iter_leaves(project_entry):
+                fallback = cluster_name or cluster_id_fallback
                 rows.append(
                     _row_from_leaf(
                         leaf,
                         project_entry=project_entry,
                         project_name=project_name,
                         bucket_date=bucket_date,
-                        cluster_id_fallback=cluster_id_fallback,
+                        cluster_id_fallback=fallback,
                     )
                 )
     return rows
+
+
+def _iter_leaves(
+    project_entry: Mapping[str, Any],
+) -> list[tuple[Mapping[str, Any], str | None]]:
+    """Yield cost leaves from project.values or nested project.clusters[].values."""
+    direct = [item for item in (project_entry.get("values") or []) if isinstance(item, Mapping)]
+    if direct:
+        return [(leaf, None) for leaf in direct]
+    leaves: list[tuple[Mapping[str, Any], str | None]] = []
+    for cluster_entry in project_entry.get("clusters") or []:
+        if not isinstance(cluster_entry, Mapping):
+            continue
+        raw_cluster = cluster_entry.get("cluster") or cluster_entry.get("value")
+        cluster_name = str(raw_cluster) if raw_cluster not in (None, "") else None
+        for leaf in cluster_entry.get("values") or []:
+            if isinstance(leaf, Mapping):
+                leaves.append((leaf, cluster_name))
+    return leaves
 
 
 def _project_name(project_entry: Mapping[str, Any]) -> str:
@@ -146,14 +163,18 @@ def _cluster_id(
     project_entry: Mapping[str, Any],
     fallback: str,
 ) -> str:
-    clusters = leaf.get("clusters") or project_entry.get("clusters")
+    for key in ("cluster", "cluster_id"):
+        value = leaf.get(key)
+        if isinstance(value, str) and value:
+            return value
+    clusters = leaf.get("clusters")
     if isinstance(clusters, list) and clusters:
         first = clusters[0]
         if isinstance(first, Mapping):
             return str(first.get("cluster") or first.get("value") or fallback)
         return str(first)
     for key in ("cluster", "cluster_id"):
-        value = leaf.get(key) or project_entry.get(key)
-        if value:
-            return str(value)
+        value = project_entry.get(key)
+        if isinstance(value, str) and value:
+            return value
     return fallback

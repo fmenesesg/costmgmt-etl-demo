@@ -16,6 +16,14 @@ SKIP_DIR_NAMES = {
 }
 SKIP_SUFFIXES = {".pyc", ".pyo", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".zip"}
 
+
+def _is_gitignored_env_file(path: Path) -> bool:
+    """Runtime dotenv is gitignored; scan committed files such as .env.example."""
+    name = path.name
+    if name == ".env.example":
+        return False
+    return name == ".env" or name.startswith(".env.")
+
 HCC_ASSIGNMENT = re.compile(
     r"^(?P<hcc_key>COSTMGMT_CLIENT_(?:ID|SECRET))=(?P<hcc_value>[^\n]*)$",
     re.MULTILINE,
@@ -43,6 +51,8 @@ def _iter_text_files(root: Path) -> list[Path]:
         if any(part in SKIP_DIR_NAMES for part in path.parts):
             continue
         if path.suffix.lower() in SKIP_SUFFIXES:
+            continue
+        if _is_gitignored_env_file(path):
             continue
         files.append(path)
     return files

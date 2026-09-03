@@ -118,6 +118,64 @@ def test_duplicate_date_project_last_wins_never_sums() -> None:
     assert rows[0].cost_total != 8.0
 
 
+def test_flatten_nested_cluster_values_from_group_by_project_and_cluster() -> None:
+    payload = {
+        "data": [
+            {
+                "date": "2026-08-10",
+                "projects": [
+                    {
+                        "project": "payments",
+                        "clusters": [
+                            {
+                                "cluster": "cluster-abc",
+                                "values": [
+                                    {
+                                        "date": "2026-08-10",
+                                        "cluster": "cluster-abc",
+                                        "cost": {
+                                            "total": {"value": 12.5, "units": "BRL"},
+                                            "raw": {"value": 10.0, "units": "BRL"},
+                                            "markup": {"value": 0.0, "units": "BRL"},
+                                            "usage": {"value": 2.5, "units": "BRL"},
+                                        },
+                                        "infrastructure": {"total": {"value": 0.0, "units": "BRL"}},
+                                        "supplementary": {"total": {"value": 12.5, "units": "BRL"}},
+                                    }
+                                ],
+                            },
+                            {
+                                "cluster": "cluster-def",
+                                "values": [
+                                    {
+                                        "date": "2026-08-10",
+                                        "cluster": "cluster-def",
+                                        "cost": {
+                                            "total": {"value": 4.0, "units": "BRL"},
+                                            "raw": {"value": 4.0, "units": "BRL"},
+                                            "markup": {"value": 0.0, "units": "BRL"},
+                                            "usage": {"value": 0.0, "units": "BRL"},
+                                        },
+                                        "infrastructure": {"total": {"value": 0.0, "units": "BRL"}},
+                                        "supplementary": {"total": {"value": 4.0, "units": "BRL"}},
+                                    }
+                                ],
+                            },
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+    rows = flatten_report(payload)
+    assert len(rows) == 2
+    by_cluster = {row.cluster_id: row for row in rows}
+    assert by_cluster["cluster-abc"].supplementary_total == 12.5
+    assert by_cluster["cluster-def"].supplementary_total == 4.0
+    assert {row.project for row in rows} == {"payments"}
+    assert {row.currency for row in rows} == {"BRL"}
+
+
 def test_flatten_pages_and_unknown_cluster_without_grouping() -> None:
     pages = [
         {

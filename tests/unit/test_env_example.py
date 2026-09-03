@@ -26,6 +26,8 @@ def test_env_example_has_empty_hcc_keys_and_lab_oracle_placeholder() -> None:
     assert "COSTMGMT_CLIENT_SECRET=" in example
     secret_value = _assignment(example, "COSTMGMT_CLIENT_SECRET")
     assert secret_value == ""
+    assert _assignment(example, "SUPERSET_SECRET_KEY") != ""
+    assert "hcc" not in _assignment(example, "SUPERSET_SECRET_KEY").lower()
 
 
 def test_gitignore_ignores_dotenv() -> None:

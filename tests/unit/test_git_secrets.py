@@ -13,7 +13,7 @@ def test_working_tree_has_no_hcc_or_production_oracle_secrets() -> None:
 
 
 def test_scanner_flags_hcc_client_secret_literal(tmp_path: Path) -> None:
-    (tmp_path / ".env").write_text(
+    (tmp_path / "notes.txt").write_text(
         "COSTMGMT_CLIENT_ID=service-account-id-123\n"
         "COSTMGMT_CLIENT_SECRET=hcc-live-secret-value-99\n",
         encoding="utf-8",
@@ -22,6 +22,15 @@ def test_scanner_flags_hcc_client_secret_literal(tmp_path: Path) -> None:
     joined = "\n".join(findings)
     assert "COSTMGMT_CLIENT_SECRET" in joined
     assert "hcc-live-secret-value-99" in joined or "CLIENT_SECRET" in joined
+
+
+def test_scanner_skips_gitignored_dotenv(tmp_path: Path) -> None:
+    (tmp_path / ".env").write_text(
+        "COSTMGMT_CLIENT_ID=service-account-id-123\n"
+        "COSTMGMT_CLIENT_SECRET=hcc-live-secret-value-99\n",
+        encoding="utf-8",
+    )
+    assert find_secret_findings(tmp_path) == []
 
 
 def test_scanner_allows_oracledemo1_placeholder_and_flags_prod_like_password(
